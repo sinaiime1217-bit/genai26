@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>운동기록 관리</title>
+<style>
+:root{--ink:#1c2430;--mut:#6b7482;--line:#e3e7ec;--soft:#f5f7fa;--acc:#1f3a5f;--accbg:#e8eef6;--up:#e11d48;--down:#2563eb;--warn:#b45309;--ok:#15803d}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:"Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;font-size:14px;line-height:1.45}
+.app{padding:16px 20px 32px}
+header{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+header h1{margin:0;font-size:20px;letter-spacing:-.02em}
+header span{color:var(--mut)}
+.wrap{display:flex;gap:20px;align-items:flex-start}
+.cal{width:70%}
+.side{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bar h2{margin:0 10px;font-size:34px;font-weight:800;letter-spacing:-.03em;min-width:180px;text-align:center}
+.bar .sp{flex:1}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:6px 12px}
+button:hover{background:var(--soft)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.pri{background:var(--acc);color:#fff;border-color:var(--acc);width:100%;padding:9px;font-weight:700}
+.pri:hover{background:#17304f}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.dw{padding:6px;text-align:center;font-weight:700;background:var(--soft);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cell{min-height:118px;padding:4px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;min-width:0;overflow:hidden}
+.cell.empty{background:#fcfcfd;cursor:default}
+.cell:not(.empty):hover{background:var(--soft)}
+.cell.sel{outline:2px solid var(--acc);outline-offset:-2px;background:var(--accbg)}
+.ct{min-height:17px;font-size:11px;font-weight:800;color:var(--acc);letter-spacing:-.01em;word-break:keep-all}
+.dn{font-weight:700;margin-bottom:2px}
+.today .dn{display:inline-block;background:var(--acc);color:#fff;border-radius:10px;padding:0 7px}
+.rc{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc i{font-style:normal;font-weight:800;margin-left:3px}
+.rc i.up{color:var(--up)}.rc i.dn2{color:var(--down)}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px}
+.card h3{margin:0 0 8px;font-size:14px}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.row h3{margin:0}
+#selTitle{margin:0;font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:28px}
+.chip{border-radius:14px;padding:3px 11px;border:1px solid var(--line);background:#fff;font-size:13px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+label{display:block;margin-bottom:8px;font-size:13px;color:var(--mut)}
+input,select{display:block;width:100%;margin-top:3px;padding:8px;border:1px solid var(--line);border-radius:6px;font:inherit;color:var(--ink);background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bad{border-color:var(--warn);background:#fffbeb}
+.msg{min-height:20px;margin:0 0 8px;font-size:13px;font-weight:600}
+.msg.err{color:var(--warn)}.msg.ok{color:var(--ok)}
+.mut{color:var(--mut);font-size:13px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+li:last-child{border-bottom:0}
+li button{padding:2px 8px;font-size:12px}
+.sg{margin-bottom:8px}
+.tabs{margin-bottom:10px}
+[hidden]{display:none!important}
+.bwb{margin:-2px 0 8px;padding:3px 11px;font-size:13px;border-radius:14px}
+.bwb.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+li .acts{display:flex;gap:4px;flex-shrink:0}
+.sg small{display:block;color:var(--acc);font-weight:800;margin-bottom:4px}
+.rc2{position:relative;display:inline-block;margin:0 6px 6px 0}
+.rb{border-radius:14px;background:var(--accbg);border-color:transparent;padding:4px 12px}
+.rb:hover{background:#d5e1f0}
+.rx{display:none;position:absolute;top:-7px;right:-7px;width:20px;height:20px;padding:0;border-radius:50%;line-height:18px;font-size:13px;background:#fff}
+.rc2:hover .rx,.rx:focus-visible{display:block}
+@media(hover:none){.rx{display:block}}
+.undo{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--soft);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:13px}
+@media(max-width:900px){
+ .wrap{flex-direction:column}.cal,.side{width:100%}
+ .bar{flex-wrap:wrap}.bar h2{font-size:26px;min-width:0;flex:1}
+ .cell{min-height:84px;padding:3px}.rc{font-size:10px}.ct{font-size:9px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+ <header><h1>운동기록 관리</h1><span>언제 어떤 운동을 했는지 남기고, 무게를 조금씩 올려 보세요.</span></header>
+ <div class="wrap">
+  <section class="cal">
+   <div class="bar">
+    <button id="prev" aria-label="이전 달">◀</button>
+    <h2 id="title"></h2>
+    <button id="next" aria-label="다음 달">▶</button>
+    <button id="today">오늘</button>
+    <span class="sp"></span>
+    <button id="mode" title="누를 때마다 이름 → 이름+무게 → 전체 순서로 바뀝니다"></button>
+   </div>
+   <div class="grid" id="grid"></div>
+  </section>
+
+  <aside class="side">
+   <h2 id="selTitle"></h2>
+   <div class="card">
+    <div class="row"><h3>대표 운동</h3><button id="catBtn"></button></div>
+    <div class="chips" id="cats"></div>
+   </div>
+   <div id="f" class="card">
+    <div class="row"><h3 id="fTitle">운동 입력</h3><button type="button" id="cancel" hidden>수정 취소</button></div>
+    <label>운동 이름<input id="n" maxlength="30" placeholder="예: 벤치프레스"></label>
+    <div class="two">
+     <div><label><span id="wl">무게 (kg)</span><input id="w" type="number" step="0.5" min="0" placeholder="60"></label><button type="button" class="bwb" id="bw" aria-pressed="false">자신의 몸무게</button></div>
+     <label>횟수<input id="r" type="number" step="1" min="1" placeholder="10"></label>
+    </div>
+    <label>대표 운동<select id="c"><option value="">선택하세요</option></select></label>
+    <p id="msg" class="msg" role="status"></p>
+    <button class="pri" type="button" id="sub">캘린더에 추가</button>
+   </div>
+   <div class="card"><h3>이 날의 기록</h3><div id="undoRec"></div><ul id="list"></ul></div>
+   <div class="card">
+    <h3>자동 추천 운동</h3>
+    <div class="chips tabs" id="recTabs"></div>
+    <p id="rmsg" class="msg" role="status"></p>
+    <div id="undo"></div>
+    <div id="recs"></div>
+   </div>
+  </aside>
+ </div>
+</div>
+
+<script>
+const CATS=['가슴','하체','어깨','복근','등','이두','삼두','밀기','당기기'];
+const MODES=['이름만','이름 + 무게','이름 + 무게 + 횟수'];
+const KEY='workout-log-v1';
+const $=id=>document.getElementById(id);
+let S={rec:{},cats:{},recs:[],mode:2};
+try{const t=JSON.parse(localStorage.getItem(KEY));if(t&&t.rec)S=Object.assign(S,t)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pd=s=>{const a=s.split('-');return new Date(+a[0],a[1]-1,+a[2])};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nk=s=>s.trim().toLowerCase();
+const now=new Date();
+let today=ymd(now),sel=today,vy=now.getFullYear(),vm=now.getMonth(),editC=false,draft=[],lastDel=null,undoT=null;
+
+CATS.forEach(c=>{$('c').insertAdjacentHTML('beforeend','<option>'+c+'</option>')});
+
+/* 점진적 과부하: 바로 전 같은 운동과 무게 비교 (1달 초과 간격이면 표시 안 함) */
+function diff(date,r){
+  let best=null;
+  for(const d in S.rec){
+    if(d>=date)continue;
+    for(const x of S.rec[d]){if(nk(x.name)===nk(r.name)&&(!best||d>best.d))best={d:d,w:x.weight}}
+  }
+  if(!best)return 0;
+  const limit=pd(best.d);limit.setMonth(limit.getMonth()+1);
+  if(pd(date)>limit)return 0;
+  return Math.round((r.weight-best.w)*10)/10;
+}
+
+function renderCal(){
+  $('title').textContent=vy+'년 '+(vm+1)+'월';
+  $('mode').textContent='표시: '+MODES[S.mode];
+  const first=new Date(vy,vm,1).getDay(),days=new Date(vy,vm+1,0).getDate();
+  let h=['일','월','화','수','목','금','토'].map(d=>'<div class="dw">'+d+'</div>').join('');
+  for(let i=0;i<first;i++)h+='<div class="cell empty"></div>';
+  for(let d=1;d<=days;d++){
+    const k=vy+'-'+pad(vm+1)+'-'+pad(d),cs=S.cats[k]||[],rs=S.rec[k]||[];
+    h+='<div class="cell'+(k===sel?' sel':'')+(k===today?' today':'')+'" onclick="pick(\''+k+'\')">'
+     +'<div class="ct">'+esc(cs.join(' · '))+'</div><div class="dn">'+d+'</div>'
+     +rs.map((r,ri)=>{
+        const df=diff(k,r);let t='<b>'+esc(r.name)+'</b>';
+        if(S.mode>=1)t+=' '+r.weight+'kg'+(r.bw?'(몸무게)':'');
+        if(S.mode>=2)t+=' ×'+r.reps;
+        if(df)t+='<i class="'+(df>0?'up':'dn2')+'">'+(df>0?'+':'-')+Math.abs(df)+'</i>';
+        return '<div class="rc" title="눌러서 수정" onclick="event.stopPropagation();editRec(\''+k+'\','+ri+')">'+t+'</div>';
+     }).join('')+'</div>';
+  }
+  $('grid').innerHTML=h;
+}
+
+function renderSide(){
+  const d=pd(sel),cs=S.cats[sel]||[],rs=S.rec[sel]||[];
+  $('selTitle').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+  $('catBtn').textContent=editC?'적용':'편집';
+  $('cats').innerHTML=editC
+    ?CATS.map(c=>'<button type="button" class="chip'+(draft.includes(c)?' on':'')+'" onclick="tg(\''+c+'\')">'+c+'</button>').join('')
+    :(cs.length?cs.map(c=>'<span class="chip on">'+c+'</span>').join(''):'<span class="mut">오늘의 대표 운동을 지정해 보세요. (편집을 누르세요)</span>');
+  $('list').innerHTML=rs.length
+    ?rs.map((r,i)=>'<li><span><b>'+esc(r.name)+'</b> '+(r.bw?'몸무게 ':'')+r.weight+'kg × '+r.reps+'회 <span class="mut">'+esc(r.cat)+'</span></span><span class="acts"><button type="button" onclick="editRec(\''+sel+'\','+i+')">수정</button><button type="button" onclick="delRec('+i+')">삭제</button></span></li>').join('')
+    :'<li class="mut">아직 기록이 없습니다. 위에서 운동을 입력해 보세요.</li>';
+  const show=S.recs.map((r,i)=>({r:r,i:i})).filter(x=>recTab==='전체'||x.r.cat===recTab);
+  $('recTabs').innerHTML=['전체'].concat(CATS).map(c=>{
+    const n=c==='전체'?S.recs.length:S.recs.filter(x=>x.cat===c).length;
+    return '<button type="button" class="chip'+(c===recTab?' on':'')+'" onclick="setTab(\''+c+'\')">'+c+(n?' '+n:'')+'</button>';
+  }).join('');
+  let h='';
+  CATS.forEach(c=>{
+    const g=show.filter(x=>x.r.cat===c);
+    if(g.length)h+='<div class="sg"><small>'+c+'</small>'+g.map(x=>
+      '<span class="rc2"><button type="button" class="rb" onclick="useRec('+x.i+')">'+esc(x.r.name)+' '+(x.r.bw?'몸무게':x.r.weight+'kg')+'×'+x.r.reps+'</button>'
+      +'<button type="button" class="rx" title="추천 삭제" aria-label="추천 삭제" onclick="delSug('+x.i+')">×</button></span>').join('')+'</div>';
+  });
+  $('recs').innerHTML=h||'<span class="mut">'+(S.recs.length?'"'+recTab+'" 카테고리에 추천할 운동이 없습니다.':'운동을 입력하면 자동으로 추천 목록에 쌓입니다.')+'</span>';
+}
+const renderAll=()=>{renderCal();renderSide()};
+
+function say(t,err){const m=$('msg');m.textContent=t;m.className='msg '+(t?(err?'err':'ok'):'')}
+
+/* 운동 추가 (기능1·3 공통). 오류 문구를 반환, 성공 시 '' */
+function syncRec(name,cat,weight,reps,bw){
+  const s=S.recs.find(x=>nk(x.name)===nk(name)&&x.cat===cat);
+  if(s){s.weight=weight;s.reps=reps;s.bw=bw}else S.recs.push({name:name,cat:cat,weight:weight,reps:reps,bw:bw});
+}
+function add(date,name,weight,reps,cat,bw){
+  const list=S.rec[date]||[];
+  if(list.some(x=>nk(x.name)===nk(name)))return '이미 있는 운동입니다.';
+  list.push({name:name,weight:weight,reps:reps,cat:cat,bw:!!bw});
+  S.rec[date]=list;syncRec(name,cat,weight,reps,!!bw);
+  save();return '';
+}
+
+function pick(k){sel=k;editC=false;say('');$('rmsg').textContent='';if(editIdx>=0)resetForm();renderAll()}
+function tg(c){const i=draft.indexOf(c);i<0?draft.push(c):draft.splice(i,1);renderSide()}
+function delRec(i){
+  const r=S.rec[sel][i];lastRec={d:sel,i:i,r:r};S.rec[sel].splice(i,1);if(!S.rec[sel].length)delete S.rec[sel];save();
+  if(editIdx===i)resetForm();else if(editIdx>i)editIdx--;
+  $('undoRec').innerHTML='<div class="undo"><span>"'+esc(r.name)+'" 기록을 삭제했습니다.</span><button type="button" onclick="restoreRec()">되돌리기</button></div>';
+  clearTimeout(undoR);undoR=setTimeout(()=>{lastRec=null;$('undoRec').innerHTML=''},10000);renderAll();
+}
+function restoreRec(){
+  if(!lastRec)return;
+  const l=S.rec[lastRec.d]||(S.rec[lastRec.d]=[]);l.splice(Math.min(lastRec.i,l.length),0,lastRec.r);
+  lastRec=null;clearTimeout(undoR);$('undoRec').innerHTML='';save();if(editIdx>=0)resetForm();renderAll();
+}
+function useRec(i){
+  const r=S.recs[i],m=add(sel,r.name,r.weight,r.reps,r.cat,r.bw);
+  const e=$('rmsg');e.textContent=m||'"'+r.name+'"을(를) '+sel.slice(5).replace('-','월 ')+'일에 추가했습니다.';e.className='msg '+(m?'err':'ok');renderAll();
+}
+function delSug(i){
+  lastDel={r:S.recs[i],i:i};S.recs.splice(i,1);save();
+  $('undo').innerHTML='<div class="undo"><span>"'+esc(lastDel.r.name)+'" 추천을 삭제했습니다.</span><button type="button" onclick="undo()">되돌리기</button></div>';
+  clearTimeout(undoT);undoT=setTimeout(()=>{lastDel=null;$('undo').innerHTML=''},10000);
+  renderSide();
+}
+function undo(){
+  if(!lastDel)return;
+  S.recs.splice(Math.min(lastDel.i,S.recs.length),0,lastDel.r);
+  lastDel=null;clearTimeout(undoT);$('undo').innerHTML='';save();renderSide();
+}
+
+$('catBtn').onclick=()=>{
+  if(editC){if(draft.length)S.cats[sel]=draft.slice();else delete S.cats[sel];save();editC=false}
+  else{draft=(S.cats[sel]||[]).slice();editC=true}
+  renderAll();
+};
+let editIdx=-1,bwOn=false,lastRec=null,undoR=null,recTab='전체';
+function setTab(c){recTab=c;$('rmsg').textContent='';renderSide()}
+function setBw(on){
+  bwOn=on;$('bw').classList.toggle('on',on);$('bw').setAttribute('aria-pressed',on);
+  $('wl').textContent=on?'내 몸무게 (kg)':'무게 (kg)';
+  if(on&&$('w').value===''&&S.bw)$('w').value=S.bw;
+}
+function resetForm(){
+  editIdx=-1;$('n').value='';$('w').value='';$('r').value='';setBw(false);
+  $('fTitle').textContent='운동 입력';$('sub').textContent='캘린더에 추가';$('cancel').hidden=true;
+  ['n','w','r','c'].forEach(i=>$(i).classList.remove('bad'));
+}
+function editRec(k,i){
+  const r=(S.rec[k]||[])[i];if(!r)return;
+  sel=k;editC=false;editIdx=i;
+  $('n').value=r.name;$('r').value=r.reps;$('c').value=r.cat;setBw(!!r.bw);$('w').value=r.weight;
+  $('fTitle').textContent='운동 수정';$('sub').textContent='수정 저장';$('cancel').hidden=false;
+  ['n','w','r','c'].forEach(x=>$(x).classList.remove('bad'));
+  say('');renderAll();$('n').focus();
+}
+function upd(d,i,name,weight,reps,cat,bw){
+  const list=S.rec[d];
+  if(list.some((x,j)=>j!==i&&nk(x.name)===nk(name)))return '이미 있는 운동입니다.';
+  list[i]={name:name,weight:weight,reps:reps,cat:cat,bw:bw};syncRec(name,cat,weight,reps,bw);save();return '';
+}
+function submit(){
+  const n=$('n').value.trim(),w=$('w').value.trim(),r=$('r').value.trim(),c=$('c').value,er=[];
+  ['n','w','r','c'].forEach(i=>$(i).classList.remove('bad'));
+  if(!n){er.push('운동 이름');$('n').classList.add('bad')}
+  if(w===''||isNaN(+w)||+w<0){er.push(bwOn?'내 몸무게(0 이상의 숫자)':'무게(0 이상의 숫자)');$('w').classList.add('bad')}
+  if(r===''||!Number.isInteger(+r)||+r<1){er.push('횟수(1 이상의 정수)');$('r').classList.add('bad')}
+  if(!c){er.push('대표 운동 선택');$('c').classList.add('bad')}
+  if(er.length){say('다음 항목을 입력해 주세요: '+er.join(', '),true);return}
+  const ed=editIdx>=0,m=ed?upd(sel,editIdx,n,+w,+r,c,bwOn):add(sel,n,+w,+r,c,bwOn);
+  if(m){say(m,true);$('n').classList.add('bad');return}
+  if(bwOn)S.bw=+w;
+  save();
+  if(ed){resetForm();say('수정했습니다.')}
+  else{$('n').value='';$('w').value='';$('r').value='';setBw(false);say('캘린더에 추가했습니다.');$('n').focus()}
+  renderAll();
+}
+$('sub').onclick=submit;
+$('cancel').onclick=()=>{resetForm();say('');renderAll()};
+$('bw').onclick=()=>setBw(!bwOn);
+['n','w','r'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit()}}));
+$('prev').onclick=()=>{vm--;if(vm<0){vm=11;vy--}renderCal()};
+$('next').onclick=()=>{vm++;if(vm>11){vm=0;vy++}renderCal()};
+$('today').onclick=()=>{vy=now.getFullYear();vm=now.getMonth();pick(today)};
+$('mode').onclick=()=>{S.mode=(S.mode+1)%3;save();renderCal()};
+
+renderAll();
+</script>
+</body>
+</html>
